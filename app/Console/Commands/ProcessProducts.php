@@ -4,34 +4,23 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Product;
+use App\Jobs\UpdateProductStatusJob;
 
 class ProcessProducts extends Command
 {
     protected $signature = 'products:process';
 
-    protected $description = 'Memproses status produk berdasarkan stok';
+    protected $description = 'Memproses status produk berdasarkan stok ke dalam Queue';
 
     public function handle()
     {
         Product::chunk(100, function ($products) {
 
-            foreach ($products as $product) {
-
-                if ($product->stok == 0) {
-                    $product->update([
-                        'status' => 'out_of_stock'
-                    ]);
-                }else {
-                    $product->update([
-                        'status'=>'available'
-                    ]);
-                }
-
-            }
+        dispatch(new UpdateProductStatusJob($products));
 
         });
 
-        $this->info('Produk berhasil diproses.');
+        $this->info('10.100 Produk berhasil dilempar ke antrean (Queue)!');
 
         return Command::SUCCESS;
     }
